@@ -30,15 +30,13 @@ module CapEC2
       servers = []
 
       client.describe_instances(filters: filters).reservations.each do |r|
-        instances = 
+        servers +=
           r.instances.select do |i|
             instance_has_tag?(i, roles_tag, role) &&
               (filter_by_stage ? instance_has_tag?(i, stages_tag, stage) : true) &&
               instance_has_tag?(i, project_tag, application) &&
               (fetch(:ec2_filter_by_status_ok?) ? instance_status_ok?(i) : true)
           end
-
-        servers += instances.map { |inst| [inst, client] }
       end
 
       servers.sort_by { |s| tag_value(s, 'Name') || '' }
