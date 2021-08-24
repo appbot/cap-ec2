@@ -5,10 +5,6 @@ require 'terminal-table'
 require 'yaml'
 require_relative 'utils'
 require_relative 'ec2-handler'
-require_relative 'status-table'
-
-# Load extra tasks
-load File.expand_path("../tasks/ec2.rake", __FILE__)
 
 module Capistrano
   module DSL
