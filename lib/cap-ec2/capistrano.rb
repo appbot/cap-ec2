@@ -20,8 +20,8 @@ module Capistrano
 
       def ec2_role(name, options={})
         aws_client = options.delete(:aws_client)
-        filter_by_stage = options.delete(:filter_by_stage)
-        raise ArgumentError, 'aws_client must be set' unless aws_client.is_a?(Array)
+        filter_by_stage = options.delete(:filter_by_stage) || true
+        raise ArgumentError, 'aws_client must be set' if aws_client.nil?
 
         ec2_handler.get_servers_for_role(name, aws_client, filter_by_stage).each do |(server, client)|
           env.role(name, CapEC2::Utils.contact_point(server),
