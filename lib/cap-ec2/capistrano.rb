@@ -32,7 +32,7 @@ module Capistrano
       private
 
       def options_with_instance_id(options, server)
-        options.merge({aws_instance_id: server.instance_id})
+        options.merge({aws_instance_id: server.instance_id, aws_instance_az: server.placement.availability_zone})
       end
 
     end
