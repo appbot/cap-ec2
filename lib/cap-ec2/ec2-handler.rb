@@ -6,19 +6,6 @@ module CapEC2
 
     def initialize
       load_config
-      configured_regions = get_regions(fetch(:ec2_region))
-      @ec2 = {}
-      configured_regions.each do |region|
-        @ec2[region] = ec2_connect(region)
-      end
-    end
-
-    def ec2_connect(region=nil)
-      Aws::EC2::Client.new(
-        access_key_id: fetch(:ec2_access_key_id),
-        secret_access_key: fetch(:ec2_secret_access_key),
-        region: region
-      )
     end
 
     def status_table
@@ -59,7 +46,7 @@ module CapEC2
       "tag:#{tag_name}"
     end
 
-    def get_servers_for_role(role)
+    def get_servers_for_role(role, client, filter_by_stage)
       filters = [
         {name: 'tag-key', values: [stages_tag, project_tag]},
         {name: tag(project_tag), values: ["*#{application}*"]},
@@ -67,15 +54,17 @@ module CapEC2
       ]
 
       servers = []
-      @ec2.each do |_, ec2|
-        ec2.describe_instances(filters: filters).reservations.each do |r|
-          servers += r.instances.select do |i|
-              instance_has_tag?(i, roles_tag, role) &&
-                instance_has_tag?(i, stages_tag, stage) &&
-                instance_has_tag?(i, project_tag, application) &&
-                (fetch(:ec2_filter_by_status_ok?) ? instance_status_ok?(i) : true)
+
+      client.describe_instances(filters: filters).reservations.each do |r|
+        instances = 
+          r.instances.select do |i|
+            instance_has_tag?(i, roles_tag, role) &&
+              (filter_by_stage ? instance_has_tag?(i, stages_tag, stage) : true) &&
+              instance_has_tag?(i, project_tag, application) &&
+              (fetch(:ec2_filter_by_status_ok?) ? instance_status_ok?(i) : true)
           end
-        end
+
+        servers += instances.map { |inst| [inst, client] }
       end
 
       servers.sort_by { |s| tag_value(s, 'Name') || '' }
